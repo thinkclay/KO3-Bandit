@@ -21,7 +21,7 @@ class Model_Bandit extends Model
 
     public function load_url(array $options)
     {
-        return Peruse_Web::factory()->http($options);
+        return Bandit_Web::factory()->http($options);
     }
 
     /**
