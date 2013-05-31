@@ -54,7 +54,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
      * @return false - on failed scrape
      */
     public function scrape()
-    {           
+    {
         $post = $this->get_post_data();
 
         $list = $this->load_url([
@@ -76,7 +76,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
         $rows = json_decode($list['result'])->rows;
         $list_count = (int) json_decode($list['result'])->records;
 
-        for ( $i = 0; $i < $list_count; $i++ )
+        for ( $i = 0; $i < 2; $i++ )
         {
             $row = $rows[$i];
 
@@ -105,7 +105,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
                 if ( ! $offender->loaded() )
                 {
                     $offender->values($this->offender_data);
-    
+
                     if ( $offender->check() )
                     {
                         $offender->create();

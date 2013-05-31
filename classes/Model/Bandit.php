@@ -296,18 +296,18 @@ class Model_Bandit extends Model
         // if the string contains no spaces then return false
         if ( ! preg_match('/\s/', $charge) )
             return FALSE;
-            
+
         if ( strlen($charge) > $large_string_length )
             return FALSE;
-            
-            
+
+
         $font = DOCROOT.'includes/arial.ttf';
-            
+
         $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge);
         $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
         $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge);
         $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
-        
+
         if ( ($font_18_charge_width / 2) < $max_width )
         {
             $fontsize = 18;
@@ -320,9 +320,9 @@ class Model_Bandit extends Model
         {
             return false;
         }
-        
+
         $charges = $words = [];
-        
+
         $words = explode(' ', $charge);
         $word_count = count($words) - 1;
         $word_width = array();
@@ -332,16 +332,16 @@ class Model_Bandit extends Model
         $charges[0] = '';
         $charges[1] = '';
         $i = 0;
-        
+
         foreach ( $words as $word )
         {
             $dims = imagettfbbox($fontsize , 0 , $font , $word);
             $word_width[$i] = $dims[2] - $dims[0];
             $i++;
         }
-        
+
         $c1 = 0;
-        
+
         for ( $i = 0; $i <= $word_count; $i++ )
         {
             if ( ($total_width[0] + $word_width[$i] <= $max_width) AND $c1 == 0 )
@@ -352,15 +352,15 @@ class Model_Bandit extends Model
             else
             {
                 $c1 = 1;
-                
+
                 if ( $total_width[1] + $word_width[$i] <= $max_width )
                 {
                     $total_width[1] = $total_width[1] + $word_width[$i];
                     $charges[1] = $charges[1] . ' ' . $words[$i];
-                } 
-                else 
-                { 
-                    break; 
+                }
+                else
+                {
+                    break;
                 }
             }
         }
@@ -378,31 +378,32 @@ class Model_Bandit extends Model
     public function mug_stamp($imgpath, $fullname, $charge1, $charge2 = null)
     {
         $max_width = 380;
-        $font = DOCROOT.'public/includes/arial.ttf';
+        $font = DOCROOT.'includes/arial.ttf';
         $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge1);
         $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
         $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge1);
         $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
-        $cropped = false;
+        $cropped = FALSE;
+
         if($font_12_charge_width > $max_width)
         {
             unset($charge2);
             $cropped_charge = $this->charge_cropper($charge1, $max_width);
-            if ($cropped_charge === false)
-            {
-                return false;
-            }
-            $cropped = true;
+
+            if ( $cropped_charge === FALSE )
+                return FALSE;
+
+            $cropped = TRUE;
             $charge1 = $cropped_charge[0];
             $charge2 = @$cropped_charge[1];
         }
-        if (isset($charge2))
+        if ( isset($charge2) )
         {
-            $font = DOCROOT.'public/includes/arial.ttf';
             $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge2);
             $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
             $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge2);
             $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
+
             if($font_12_charge_width > $max_width)
             {
                 unset($charge2);
@@ -410,158 +411,121 @@ class Model_Bandit extends Model
         }
         if (isset($charge1))
         {
-            $font = DOCROOT.'public/includes/arial.ttf';
             $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge1);
             $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
             $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge1);
             $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
-            if($font_12_charge_width > ($max_width * 2) )
-            {
-                return false;
-            }
+
+            if ( $font_12_charge_width > ($max_width * 2) )
+                return FALSE;
         }
-        # todo: check to make sure the $imgpath is an image, if not then return string 'not an image'
+
         $charge1 = trim($charge1);
-        //header('Content-Type: image/png');
-        //$imgpath = DOCROOT.'public/images/scrape/ohio/summit/test.png';
-        # resize image to 400x480 and save it
+
         $image = Image::factory($imgpath);
         $image->resize(400, 480, Image::NONE)->save();
-        # open original image with GD
+
         // check for valid image
-        $check = getimagesize($imgpath);
-        if ($check === false)
-        {
+        if ( ! $check = getimagesize($imgpath) )
             return false;
-        }
+
         $orig = imagecreatefrompng($imgpath);
-        # create a blank 400x600 canvas
+
+        // create a blank 400x600 canvas, create a white box, and slap the image on it
         $canvas = imagecreatetruecolor(400, 600);
-        # allocate white
         $white = imagecolorallocate($canvas, 255, 255, 255);
-        # draw a filled rectangle on it
         imagefilledrectangle($canvas, 0, 0, 400, 600, $white);
-        # copy original onto white painted canvas
         imagecopy($canvas, $orig, 0, 0, 0, 0, 400, 480);
 
-        # start text stamp
-        # create a new text canvas box @ 400x120
+        // start text stampcreate a new text canvas box @ 400x120 this one will overlay instead
         $txtCanvas = imagecreatetruecolor(400, 120);
-        # allocate white
         $white = imagecolorallocate($txtCanvas, 255, 255, 255);
-        # draw a filled rectangle on it
         imagefilledrectangle($txtCanvas, 0, 0, 400, 120, $white);
-        # set font file
-        $font = DOCROOT.'public/includes/arial.ttf';
 
-        # fullname
-        # find dimentions of the text box for fullname
-
-        $dims = imagettfbbox(18 , 0 , $font , $fullname );
-        # set width
+        // put the name on the box by finding dimensions of the text box and making it fit
+        $dims = imagettfbbox(18, 0, $font, $fullname);
         $width = $dims[2] - $dims[0];
-        # check to see if the name fits
-        if ($width < 390)
+
+        if ( $width < 390 )
         {
             $fontsize = 18;
-            # find center
             $center = ceil((400 - $width)/2);
-            # write text
             imagettftext($txtCanvas, $fontsize, 0, $center, 35, 5, $font, $fullname);
         }
-        # if it doesn't fit cut it down to size 12
+        // if it doesn't fit cut it down to size 12
         else
         {
             $fontsize = 12;
             $dims = imagettfbbox(12 , 0 , $font , $fullname );
-            # set width
             $width = $dims[2] - $dims[0];
-            # find center
             $center = ceil((400 - $width)/2);
-            # write text
             imagettftext($txtCanvas, $fontsize, 0, $center, 35, 5, $font, $fullname);
         }
-        //@todo: make a check for text that is too long for the box and cut out middle name if so
 
-        # charge1
-        # find dimentions of the text box for charge1
+        // do the same as we did with the name but for charges
         $dims = imagettfbbox(18 , 0 , $font , $charge1 );
-        # set width
         $width = $dims[2] - $dims[0];
-        # check to see if charge1 description fits
-        if ($width < 390)
+
+        if ( $width < 390 )
         {
             $cfont = 18;
-            # find center
             $center = ceil((400 - $width)/2);
-            # write text
             imagettftext($txtCanvas, $cfont, 0, $center, 65, 5, $font, $charge1);
         }
-        # if it doesn't fit cut it down to size 12
         else
         {
             $cfont = 12;
             $dims = imagettfbbox(12 , 0 , $font , $charge1 );
-            # set width
             $width = $dims[2] - $dims[0];
-            # find center
             $center = ceil((400 - $width)/2);
-            # write text
             imagettftext($txtCanvas, $cfont, 0, $center, 65, 5, $font, $charge1);
         }
 
-        # check for a 2nd charge
-        if (isset($charge2))
+        if ( isset($charge2) )
         {
-            if ($cropped === true)
+            if ( $cropped === true )
             {
                 $dims = imagettfbbox($cfont , 0 , $font , $charge2 );
-                # set width
                 $width = $dims[2] - $dims[0];
-                # find center
                 $center = ceil((400 - $width)/2);
-                # write text
                 imagettftext($txtCanvas, $cfont, 0, $center, 95, 5, $font, $charge2);
             }
             else
             {
-                # charge2
-                # find dimentions of the text box for charge2
                 $dims = imagettfbbox(18 , 0 , $font , $charge2 );
-                # set width
                 $width = $dims[2] - $dims[0];
-                # check to see if charge1 description fits
-                if ($width < 390 && $cfont == 18)
+
+                if ( $width < 390 && $cfont == 18 )
                 {
-                    # find center
                     $center = ceil((400 - $width)/2);
-                    # write text
                     imagettftext($txtCanvas, $cfont, 0, $center, 95, 5, $font, $charge2);
                 }
-                # if it doesn't fit cut it down to size 12
                 else
                 {
                     $cfont = 12;
                     $dims = imagettfbbox(12 , 0 , $font , $charge2 );
-                    # set width
                     $width = $dims[2] - $dims[0];
-                    # find center
                     $center = ceil((400 - $width)/2);
-                    # write text
                     imagettftext($txtCanvas, $cfont, 0, $center, 95, 5, $font, $charge2);
                 }
             }
         }
-        #doesn't exist for some reason
-        //imageantialias($txtCanvas);
-        # copy text canvas onto the image
+
+        // Put the text on the image
         imagecopy($canvas, $txtCanvas, 0, 480, 0, 0, 400, 120);
         $imgName = $fullname . ' ' . date('(m-d-Y)');
-        $mugStamp = $imgpath;
-        # save file
-        $check = imagepng($canvas, $mugStamp);
-        chmod($mugStamp, 0777); //not working for some reason
-        if ($check) {return true;} else {return false;}
+
+        // Save the file
+        if ( imagepng($canvas, $imgpath) )
+        {
+            echo $imgpath."<br>\r\n";
+            chmod($imgpath, 0777);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
 }
