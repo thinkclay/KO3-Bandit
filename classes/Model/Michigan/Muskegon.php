@@ -54,7 +54,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
      * @return false - on failed scrape
      */
     public function scrape()
-    {
+    {           
         $post = $this->get_post_data();
 
         $list = $this->load_url([
@@ -84,9 +84,6 @@ class Model_Michigan_Muskegon extends Model_Bandit
                 'booking_id' => $this->name.'_'.$this->state.'_'.$row->book_id
             ])->load();
 
-            if ( $offender->loaded() )
-                continue;
-
             $this->offender_data = [
                 'booking_id'    => $this->name.'_'.$this->state.'_'.$row->book_id,
                 'updated'       => time(),
@@ -105,11 +102,14 @@ class Model_Michigan_Muskegon extends Model_Bandit
 
             try
             {
-                $offender->values($this->offender_data);
-
-                if ( $offender->check() )
+                if ( ! $offender->loaded() )
                 {
-                    $offender->create();
+                    $offender->values($this->offender_data);
+    
+                    if ( $offender->check() )
+                    {
+                        $offender->create();
+                    }
                 }
             }
             catch ( Brass_Validation_Exception $e )

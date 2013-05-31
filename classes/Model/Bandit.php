@@ -293,67 +293,78 @@ class Model_Bandit extends Model
 
     function charge_cropper($charge, $max_width, $large_string_length = 30)
     {
-        $check = preg_match('/\s/', $charge);//if the string contains no spaces then return false
-        if($check)
+        // if the string contains no spaces then return false
+        if ( ! preg_match('/\s/', $charge) )
+            return FALSE;
+            
+        if ( strlen($charge) > $large_string_length )
+            return FALSE;
+            
+            
+        $font = DOCROOT.'includes/arial.ttf';
+            
+        $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge);
+        $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
+        $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge);
+        $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
+        
+        if ( ($font_18_charge_width / 2) < $max_width )
         {
-            $font = DOCROOT.'public/includes/arial.ttf';
-            $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge);
-            $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
-            $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge);
-            $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
-            if(($font_18_charge_width / 2) < $max_width)
+            $fontsize = 18;
+        }
+        elseif(($font_12_charge_width / 2) < $max_width)
+        {
+            $fontsize = 12;
+        }
+        else
+        {
+            return false;
+        }
+        
+        $charges = $words = [];
+        
+        $words = explode(' ', $charge);
+        $word_count = count($words) - 1;
+        $word_width = array();
+        $total_width = array();
+        $total_width[0] = 0;
+        $total_width[1] = 0;
+        $charges[0] = '';
+        $charges[1] = '';
+        $i = 0;
+        
+        foreach ( $words as $word )
+        {
+            $dims = imagettfbbox($fontsize , 0 , $font , $word);
+            $word_width[$i] = $dims[2] - $dims[0];
+            $i++;
+        }
+        
+        $c1 = 0;
+        
+        for ( $i = 0; $i <= $word_count; $i++ )
+        {
+            if ( ($total_width[0] + $word_width[$i] <= $max_width) AND $c1 == 0 )
             {
-                $fontsize = 18;
-            }
-            elseif(($font_12_charge_width / 2) < $max_width)
-            {
-                $fontsize = 12;
+                $total_width[0] = $total_width[0] + $word_width[$i];
+                $charges[0] = $charges[0] . ' ' . $words[$i];
             }
             else
             {
-                return false;
+                $c1 = 1;
+                
+                if ( $total_width[1] + $word_width[$i] <= $max_width )
+                {
+                    $total_width[1] = $total_width[1] + $word_width[$i];
+                    $charges[1] = $charges[1] . ' ' . $words[$i];
+                } 
+                else 
+                { 
+                    break; 
+                }
             }
-            $charges = array();
-            if(strlen($charge) > $large_string_length)
-            {
-                $words = array();
-                $words = explode(' ', $charge);
-                $word_count = count($words) - 1;
-                $charges = array();
-                $word_width = array();
-                $total_width = array();
-                $total_width[0] = 0;
-                $total_width[1] = 0;
-                $charges[0] = '';
-                $charges[1] = '';
-                $i = 0;
-                foreach($words as $word)
-                {
-                    $dims = imagettfbbox($fontsize , 0 , $font , $word);
-                    $word_width[$i] = $dims[2] - $dims[0];
-                    $i++;
-                }
-                $c1 = 0;
-                for($i = 0; $i <= $word_count; $i++)
-                {
-                    if(((int)$total_width[0] + (int)$word_width[$i]) <= (int)$max_width && $c1 == 0)
-                    {
-                        $total_width[0] = $total_width[0] + $word_width[$i];
-                        $charges[0] = $charges[0] . ' ' . $words[$i];
-                    }
-                    else
-                    {
-                        $c1 = 1;
-                        if(((int)$total_width[1] + (int)$word_width[$i]) <= (int)$max_width)
-                        {
-                            $total_width[1] = $total_width[1] + $word_width[$i];
-                            $charges[1] = $charges[1] . ' ' . $words[$i];
-                        } else { break; }
-                    }
-                }
-                return $charges;
-            } else { return false; }
-        } else { return false; }
+        }
+        return $charges;
     }
 
 
