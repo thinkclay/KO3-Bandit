@@ -183,7 +183,7 @@ class Model_Bandit extends Model
         ];
     }
 
-    public function set_mugpath($imagepath)
+    public function create_path($imagepath)
     {
         if ( ! $check = preg_match('/\/(mugs|raw|original)\/.*\//Uis', $imagepath, $match) )
             return FALSE;
@@ -369,23 +369,29 @@ class Model_Bandit extends Model
 
 
     /**
-    * mugStamp - Takes an image and adds space at the bottom for name and charges
+    * Mug Stamp 
     *
-    * @todo
-    * @return
-    * @author Winter King
+    * Takes an image and adds space at the bottom for name and charges
     */
-    public function mug_stamp($imgpath, $fullname, $charge1, $charge2 = null)
-    {
+    public function mug_stamp($raw_path, $prod_path, $fullname, $charge1, $charge2 = null)
+    {   
+        // Copy a fresh image from the raw path
+        /*
+if ( ! file_exists($prod_path) )
+            return 'mug already exists';
+        else
+*/
+            copy($raw_path, $prod_path);
+        
         $max_width = 380;
         $font = DOCROOT.'includes/arial.ttf';
-        $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge1);
+        $font_18_dims = imagettfbbox(18, 0, $font, $charge1);
         $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
-        $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge1);
+        $font_12_dims = imagettfbbox(12, 0, $font, $charge1);
         $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
         $cropped = FALSE;
 
-        if($font_12_charge_width > $max_width)
+        if ( $font_12_charge_width > $max_width )
         {
             unset($charge2);
             $cropped_charge = $this->charge_cropper($charge1, $max_width);
@@ -397,6 +403,7 @@ class Model_Bandit extends Model
             $charge1 = $cropped_charge[0];
             $charge2 = @$cropped_charge[1];
         }
+        
         if ( isset($charge2) )
         {
             $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge2);
@@ -404,12 +411,13 @@ class Model_Bandit extends Model
             $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge2);
             $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
 
-            if($font_12_charge_width > $max_width)
+            if ( $font_12_charge_width > $max_width )
             {
                 unset($charge2);
             }
         }
-        if (isset($charge1))
+        
+        if ( isset($charge1) )
         {
             $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge1);
             $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
@@ -421,15 +429,15 @@ class Model_Bandit extends Model
         }
 
         $charge1 = trim($charge1);
-
-        $image = Image::factory($imgpath);
+        
+        $image = Image::factory($prod_path);
         $image->resize(400, 480, Image::NONE)->save();
 
         // check for valid image
-        if ( ! $check = getimagesize($imgpath) )
-            return false;
+        if ( ! $check = getimagesize($prod_path) )
+            throw new Bandit_Exception('could not validate image size Bandit Model: 438', 'severe');
 
-        $orig = imagecreatefrompng($imgpath);
+        $orig = imagecreatefrompng($prod_path);
 
         // create a blank 400x600 canvas, create a white box, and slap the image on it
         $canvas = imagecreatetruecolor(400, 600);
@@ -513,18 +521,16 @@ class Model_Bandit extends Model
 
         // Put the text on the image
         imagecopy($canvas, $txtCanvas, 0, 480, 0, 0, 400, 120);
-        $imgName = $fullname . ' ' . date('(m-d-Y)');
 
         // Save the file
-        if ( imagepng($canvas, $imgpath) )
+        if ( imagepng($canvas, $prod_path) )
         {
-            echo $imgpath."<br>\r\n";
-            chmod($imgpath, 0777);
-            return true;
+            echo $prod_path."<br>\r\n";
+            return 'mug created';
         }
         else
         {
-            return false;
+            return FALSE;
         }
     }
 

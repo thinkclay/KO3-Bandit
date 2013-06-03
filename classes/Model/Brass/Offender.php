@@ -85,8 +85,7 @@ class Model_Brass_Offender extends Brass
         'image' => [
             'editable'  => 'admin',
             'label'     => 'Image',
-            'type'      => 'string',
-            'required'  => TRUE
+            'type'      => 'string'
         ],
 
         'age' => [

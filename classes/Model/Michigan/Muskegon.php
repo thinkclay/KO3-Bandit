@@ -27,7 +27,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
         'mug'       => 'https://mcd911.net/p2c/Mug.aspx'
     ];
 
-    protected $errors = [];
+    protected $errors = FALSE;
     protected $offender_data = NULL;
 
 
@@ -54,7 +54,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
      * @return false - on failed scrape
      */
     public function scrape()
-    {
+    {           
         $post = $this->get_post_data();
 
         $list = $this->load_url([
@@ -76,16 +76,17 @@ class Model_Michigan_Muskegon extends Model_Bandit
         $rows = json_decode($list['result'])->rows;
         $list_count = (int) json_decode($list['result'])->records;
 
-        for ( $i = 0; $i < 2; $i++ )
+        for ( $i = 0; $i < $list_count; $i++ )
         {
             $row = $rows[$i];
 
-            $offender = Brass::factory('Brass_Offender', [
-                'booking_id' => $this->name.'_'.$this->state.'_'.$row->book_id
+            $doc = Brass::factory('Brass_Offender', [
+                'booking_id' => $this->name.'_'.$row->book_id
             ])->load();
 
             $this->offender_data = [
-                'booking_id'    => $this->name.'_'.$this->state.'_'.$row->book_id,
+                'booking_id'    => $this->name.'_'.$row->book_id,
+                'scrape_time'   => time(),
                 'updated'       => time(),
                 'firstname'     => $row->firstname,
                 'lastname'      => $row->lastname,
@@ -102,13 +103,13 @@ class Model_Michigan_Muskegon extends Model_Bandit
 
             try
             {
-                if ( ! $offender->loaded() )
+                if ( ! $doc->loaded() )
                 {
-                    $offender->values($this->offender_data);
-
-                    if ( $offender->check() )
+                    $doc->values($this->offender_data);
+                        
+                    if ( $doc->check() )
                     {
-                        $offender->create();
+                        $doc->create();
                     }
                 }
             }
@@ -123,12 +124,15 @@ class Model_Michigan_Muskegon extends Model_Bandit
                     ];
                 }
             }
+            
+            if ( $this->errors )
+                var_dump($this->errors);
 
             // Set this to the iterator just like the site does to retrieve the detail view
             $post['ctl00$MasterPage$mainContent$CenterColumnContent$hfRecordIndex'] = $i;
 
             $this->get_mug($post);
-            // sleep(rand(5,100));
+            sleep(rand(5,100));
         }
 
         if ( isset($errors) )
@@ -202,26 +206,36 @@ class Model_Michigan_Muskegon extends Model_Bandit
         ])['result'];
 
         $mug = $this->mug_info($this->offender_data);
-        $mug_raw = $this->set_mugpath($mug['raw'].$mug['name']);
-        $mug_prod = $this->set_mugpath($mug['prod'].$mug['name']);
+        $mug_raw = $mug['raw'].$mug['name'];
+        $mug_prod = $mug['prod'].$mug['name'];
+                
+        // Write the raw file if it doesnt exist
+        if ( ! file_exists($mug_raw) )
+        {
+            if ( ! is_dir($mug['raw']) )
+                $this->create_path($mug['raw']);
+                
+            // make the file
+            $f = fopen($mug_raw, 'wb');
+            fwrite($f, $raw);
+            fclose($f);
+        }
+
+        if ( ! is_dir($mug['prod']) )
+            $this->create_path($mug['prod']);
 
         try
         {
-            // Write the raw file and then copy to prod directory
-            if ( ! file_exists($mug_prod) )
+            if ( file_exists($mug_raw) )
             {
-                $f = fopen($mug_raw, 'wb');
-                fwrite($f, $raw);
-                fclose($f);
-                copy($mug_raw, $mug_prod);
+                echo $this->mug_stamp(
+                    $mug_raw,
+                    $mug_prod,
+                    $this->offender_data['firstname'].' '.$this->offender_data['lastname'],
+                    $this->offender_data['charges'][0],
+                    @$this->offender_data['charges'][1]
+                );
             }
-
-            $this->mug_stamp(
-                $mug_prod,
-                $this->offender_data['firstname'].' '.$this->offender_data['lastname'],
-                $this->offender_data['charges'][0],
-                @$this->offender_data['charges'][1]
-            );
         }
         catch ( Exception $e )
         {
