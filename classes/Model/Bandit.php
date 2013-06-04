@@ -73,11 +73,13 @@ class Model_Bandit extends Model
     public function clean_html($html)
     {
        // Specify configuration
-        $config = array(
-            'indent' => true,
-            'output-xhtml' => true,
+        $config = [
+            'clean' => TRUE,
+            'indent' => TRUE,
+            'drop-font-tags' => TRUE,
+            'output-xhtml' => TRUE,
             'wrap' => 200
-        );
+        ];
 
         // Tidy
         $tidy = new tidy;
@@ -86,6 +88,20 @@ class Model_Bandit extends Model
 
         return $tidy;
     }
+
+    function array_filter_recursive($input)
+    {
+        foreach ($input as &$value)
+        {
+            if ( is_array($value) )
+            {
+                $value = $this->array_filter_recursive($value);
+            }
+        }
+
+        return array_filter($input);
+    }
+
 
     // true to remove extra white space
     public function clean_string_utf8($string_to_clean, $bool = false)
@@ -369,12 +385,12 @@ class Model_Bandit extends Model
 
 
     /**
-    * Mug Stamp 
+    * Mug Stamp
     *
     * Takes an image and adds space at the bottom for name and charges
     */
     public function mug_stamp($raw_path, $prod_path, $fullname, $charge1, $charge2 = null)
-    {   
+    {
         // Copy a fresh image from the raw path
         /*
 if ( ! file_exists($prod_path) )
@@ -382,7 +398,7 @@ if ( ! file_exists($prod_path) )
         else
 */
             copy($raw_path, $prod_path);
-        
+
         $max_width = 380;
         $font = DOCROOT.'includes/arial.ttf';
         $font_18_dims = imagettfbbox(18, 0, $font, $charge1);
@@ -403,7 +419,7 @@ if ( ! file_exists($prod_path) )
             $charge1 = $cropped_charge[0];
             $charge2 = @$cropped_charge[1];
         }
-        
+
         if ( isset($charge2) )
         {
             $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge2);
@@ -416,7 +432,7 @@ if ( ! file_exists($prod_path) )
                 unset($charge2);
             }
         }
-        
+
         if ( isset($charge1) )
         {
             $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge1);
@@ -429,7 +445,7 @@ if ( ! file_exists($prod_path) )
         }
 
         $charge1 = trim($charge1);
-        
+
         $image = Image::factory($prod_path);
         $image->resize(400, 480, Image::NONE)->save();
 

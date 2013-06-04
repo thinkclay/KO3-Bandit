@@ -28,7 +28,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
     ];
 
     protected $errors = FALSE;
-    protected $offender_data = NULL;
+    protected $_offender = NULL;
 
 
     /**
@@ -54,7 +54,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
      * @return false - on failed scrape
      */
     public function scrape()
-    {           
+    {
         $post = $this->get_post_data();
 
         $list = $this->load_url([
@@ -84,7 +84,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
                 'booking_id' => $this->name.'_'.$row->book_id
             ])->load();
 
-            $this->offender_data = [
+            $this->_offender = [
                 'booking_id'    => $this->name.'_'.$row->book_id,
                 'scrape_time'   => time(),
                 'updated'       => time(),
@@ -105,8 +105,8 @@ class Model_Michigan_Muskegon extends Model_Bandit
             {
                 if ( ! $doc->loaded() )
                 {
-                    $doc->values($this->offender_data);
-                        
+                    $doc->values($this->_offender);
+
                     if ( $doc->check() )
                     {
                         $doc->create();
@@ -124,7 +124,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
                     ];
                 }
             }
-            
+
             if ( $this->errors )
                 var_dump($this->errors);
 
@@ -205,16 +205,16 @@ class Model_Michigan_Muskegon extends Model_Bandit
             'cookie'    => $this->cookie
         ])['result'];
 
-        $mug = $this->mug_info($this->offender_data);
+        $mug = $this->mug_info($this->_offender);
         $mug_raw = $mug['raw'].$mug['name'];
         $mug_prod = $mug['prod'].$mug['name'];
-                
+
         // Write the raw file if it doesnt exist
         if ( ! file_exists($mug_raw) )
         {
             if ( ! is_dir($mug['raw']) )
                 $this->create_path($mug['raw']);
-                
+
             // make the file
             $f = fopen($mug_raw, 'wb');
             fwrite($f, $raw);
@@ -231,9 +231,9 @@ class Model_Michigan_Muskegon extends Model_Bandit
                 echo $this->mug_stamp(
                     $mug_raw,
                     $mug_prod,
-                    $this->offender_data['firstname'].' '.$this->offender_data['lastname'],
-                    $this->offender_data['charges'][0],
-                    @$this->offender_data['charges'][1]
+                    $this->_offender['firstname'].' '.$this->offender_data['lastname'],
+                    $this->_offender['charges'][0],
+                    @$this->_offender['charges'][1]
                 );
             }
         }
