@@ -7,23 +7,23 @@
  *
  * @todo        Validate user or CLI for security
  * @package     Bandit
- * @author 	    Clay McIlrath
+ * @author      Clay McIlrath
  */
 class Controller_Bandit extends Controller_Public
 {
-	/**
+    /**
      * Scrape is what calls the specific model to scrape.
      */
     public function action_scrape()
     {
         $this->auto_render = FALSE;
 
-        $state  = ucwords($this->request->param('state'));
-        $county = ucwords($this->request->param('county'));
+        $name  = ucwords($this->request->param('name'));
+        $sub = ucwords($this->request->param('sub'));
 
-    	$class = 'Model_'.$state.'_'.$county;
-    	$scrape = new $class;
+        $class = 'Model_'.$name.'_'.$sub;
+        $scrape = new $class;
 
-    	$scrape->scrape();
+        $scrape->scrape();
     }
 }

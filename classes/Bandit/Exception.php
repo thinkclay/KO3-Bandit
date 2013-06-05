@@ -4,7 +4,7 @@
  * Bandit Exception Handler
  *
  * @package  Bandit
- * @author	 Clay McIlrath
+ * @author   Clay McIlrath
  */
 class Bandit_Exception extends Exception
 {
@@ -29,7 +29,8 @@ class Bandit_Exception extends Exception
         switch ( $code )
         {
             case 'severe' :
-                $mail = mail('thinkclay@gmail.com', 'Severe Error with Scrape', $message);
+                $data['message'] = $message;
+                Model_Annex_Email::factory()->send('mail.exception.severe', 'system', $data);
                 parent::__construct($message, 300);
                 break;
 
