@@ -1,16 +1,223 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Model_Scrape
+ * Bandit Model
  *
- * @author Jiran Dowlati
+ * provides core scraping functionality to other models
  *
- **/
+ * @package   Bandit
+ * @author    Clay McIlrath
+ */
 class Model_Bandit extends Model
 {
+    public function raise($message, $severity)
+    {
+        switch($severity)
+        {
+            case 'report' :
+                echo $message."<br />\r\n";
+                break;
+            default :
+                echo $message."<br />\r\n";
+        }
+    }
+    
+    /**
+     * Get rid of this later
+     *
+     * usedin:    Multnomah
+     */
+    public function mugStamp($imgpath, $fullname, $charge1, $charge2 = null)
+    {
+        $max_width = 380;
+        $font = DOCROOT.'public/includes/arial.ttf';
+        $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge1);
+        $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
+        $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge1);
+        $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
+        $cropped = false;
+        if($font_12_charge_width > $max_width)
+        {
+            unset($charge2);
+            $cropped_charge = $this->charge_cropper($charge1, $max_width);
+            if ($cropped_charge === false)
+            {
+                return false;
+            }
+            $cropped = true;
+            $charge1 = $cropped_charge[0];
+            $charge2 = @$cropped_charge[1];
+        }
+        if (isset($charge2))
+        {
+            $font = DOCROOT.'public/includes/arial.ttf';
+            $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge2);
+            $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
+            $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge2);
+            $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
+            if($font_12_charge_width > $max_width)
+            {
+                unset($charge2);
+            }
+        }
+        if (isset($charge1))
+        {
+            $font = DOCROOT.'public/includes/arial.ttf';
+            $font_18_dims = imagettfbbox( 18 , 0 , $font , $charge1);
+            $font_18_charge_width = $font_18_dims[2] - $font_18_dims[0];
+            $font_12_dims = imagettfbbox( 12 , 0 , $font , $charge1);
+            $font_12_charge_width = $font_12_dims[2] - $font_12_dims[0];
+            if($font_12_charge_width > ($max_width * 2) )
+            {
+                return false;
+            }
+        }
+        # todo: check to make sure the $imgpath is an image, if not then return string 'not an image'
+        $charge1 = trim($charge1);
+        //header('Content-Type: image/png');
+        //$imgpath = DOCROOT.'public/images/scrape/ohio/summit/test.png';
+        # resize image to 400x480 and save it
+        $image = Image::factory($imgpath);
+        $image->resize(400, 480, Image::NONE)->save();
+        # open original image with GD
+        // check for valid image
+        $check = getimagesize($imgpath);
+        if ($check === false)
+        {
+            return false;
+        }
+        $orig = imagecreatefrompng($imgpath);
+        # create a blank 400x600 canvas
+        $canvas = imagecreatetruecolor(400, 600);
+        # allocate white
+        $white = imagecolorallocate($canvas, 255, 255, 255);
+        # draw a filled rectangle on it
+        imagefilledrectangle($canvas, 0, 0, 400, 600, $white);
+        # copy original onto white painted canvas
+        imagecopy($canvas, $orig, 0, 0, 0, 0, 400, 480);
+
+        # start text stamp
+        # create a new text canvas box @ 400x120
+        $txtCanvas = imagecreatetruecolor(400, 120);
+        # allocate white
+        $white = imagecolorallocate($txtCanvas, 255, 255, 255);
+        # draw a filled rectangle on it
+        imagefilledrectangle($txtCanvas, 0, 0, 400, 120, $white);
+        # set font file
+        $font = DOCROOT.'public/includes/arial.ttf';
+
+        # fullname
+        # find dimentions of the text box for fullname
+
+        $dims = imagettfbbox(18 , 0 , $font , $fullname );
+        # set width
+        $width = $dims[2] - $dims[0];
+        # check to see if the name fits
+        if ($width < 390)
+        {
+            $fontsize = 18;
+            # find center
+            $center = ceil((400 - $width)/2);
+            # write text
+            imagettftext($txtCanvas, $fontsize, 0, $center, 35, 5, $font, $fullname);
+        }
+        # if it doesn't fit cut it down to size 12
+        else
+        {
+            $fontsize = 12;
+            $dims = imagettfbbox(12 , 0 , $font , $fullname );
+            # set width
+            $width = $dims[2] - $dims[0];
+            # find center
+            $center = ceil((400 - $width)/2);
+            # write text
+            imagettftext($txtCanvas, $fontsize, 0, $center, 35, 5, $font, $fullname);
+        }
+        //@todo: make a check for text that is too long for the box and cut out middle name if so
+
+        # charge1
+        # find dimentions of the text box for charge1
+        $dims = imagettfbbox(18 , 0 , $font , $charge1 );
+        # set width
+        $width = $dims[2] - $dims[0];
+        # check to see if charge1 description fits
+        if ($width < 390)
+        {
+            $cfont = 18;
+            # find center
+            $center = ceil((400 - $width)/2);
+            # write text
+            imagettftext($txtCanvas, $cfont, 0, $center, 65, 5, $font, $charge1);
+        }
+        # if it doesn't fit cut it down to size 12
+        else
+        {
+            $cfont = 12;
+            $dims = imagettfbbox(12 , 0 , $font , $charge1 );
+            # set width
+            $width = $dims[2] - $dims[0];
+            # find center
+            $center = ceil((400 - $width)/2);
+            # write text
+            imagettftext($txtCanvas, $cfont, 0, $center, 65, 5, $font, $charge1);
+        }
+
+        # check for a 2nd charge
+        if (isset($charge2))
+        {
+            if ($cropped === true)
+            {
+                $dims = imagettfbbox($cfont , 0 , $font , $charge2 );
+                # set width
+                $width = $dims[2] - $dims[0];
+                # find center
+                $center = ceil((400 - $width)/2);
+                # write text
+                imagettftext($txtCanvas, $cfont, 0, $center, 95, 5, $font, $charge2);
+            }
+            else
+            {
+                # charge2
+                # find dimentions of the text box for charge2
+                $dims = imagettfbbox(18 , 0 , $font , $charge2 );
+                # set width
+                $width = $dims[2] - $dims[0];
+                # check to see if charge1 description fits
+                if ($width < 390 && $cfont == 18)
+                {
+                    # find center
+                    $center = ceil((400 - $width)/2);
+                    # write text
+                    imagettftext($txtCanvas, $cfont, 0, $center, 95, 5, $font, $charge2);
+                }
+                # if it doesn't fit cut it down to size 12
+                else
+                {
+                    $cfont = 12;
+                    $dims = imagettfbbox(12 , 0 , $font , $charge2 );
+                    # set width
+                    $width = $dims[2] - $dims[0];
+                    # find center
+                    $center = ceil((400 - $width)/2);
+                    # write text
+                    imagettftext($txtCanvas, $cfont, 0, $center, 95, 5, $font, $charge2);
+                }
+            }
+        }
+        #doesn't exist for some reason
+        //imageantialias($txtCanvas);
+        # copy text canvas onto the image
+        imagecopy($canvas, $txtCanvas, 0, 480, 0, 0, 400, 120);
+        $imgName = $fullname . ' ' . date('(m-d-Y)');
+        $mugStamp = $imgpath;
+        # save file
+        $check = imagepng($canvas, $mugStamp);
+        chmod($mugStamp, 0777); //not working for some reason
+        if ($check) {return true;} else {return false;}
+    }
+
     /**
      * Cleaner print out of arrays.
-     *
      */
     public function pretty_print($val)
     {
@@ -118,15 +325,11 @@ class Model_Bandit extends Model
     public function parse($pattern, $site)
     {
         preg_match_all($pattern, $site, $matches);
-        if( !empty($matches[0]) || !empty($matches[1]) )
-        {
+        
+        if ( count($matches) )
             return $matches;
-        }
         else
-        {
-            echo "Sorry it looks like your regex pattern might be off"; exit;
-        }
-
+            return false;
     }
 
     /**
@@ -392,11 +595,9 @@ class Model_Bandit extends Model
     public function mug_stamp($raw_path, $prod_path, $fullname, $charge1, $charge2 = null)
     {
         // Copy a fresh image from the raw path
-        /*
-if ( ! file_exists($prod_path) )
+        if ( ! file_exists($prod_path) )
             return 'mug already exists';
         else
-*/
             copy($raw_path, $prod_path);
 
         $max_width = 380;

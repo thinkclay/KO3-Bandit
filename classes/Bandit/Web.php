@@ -31,7 +31,7 @@ class Bandit_Web
     public function http(array $options)
     {
         $target = $options['target'];
-        $referrer = $options['referrer'];
+        $referrer = isset($options['referrer']) ? $options['referrer'] : $options['target'];
         $method = isset($options['method']) ? $options['method'] : 'GET';
         $cookie = isset($options['cookie']) ? $options['cookie'] : '/tmp/cookie';
         $data_array = isset($options['data']) ? $options['data'] : FALSE;
