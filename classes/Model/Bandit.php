@@ -595,7 +595,7 @@ class Model_Bandit extends Model
     public function mug_stamp($raw_path, $prod_path, $fullname, $charge1, $charge2 = null)
     {
         // Copy a fresh image from the raw path
-        if ( ! file_exists($prod_path) )
+        if ( file_exists($prod_path) )
             return 'mug already exists';
         else
             copy($raw_path, $prod_path);
