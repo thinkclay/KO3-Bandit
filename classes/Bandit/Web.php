@@ -35,8 +35,8 @@ class Bandit_Web
         $method = isset($options['method']) ? $options['method'] : 'GET';
         $cookie = isset($options['cookie']) ? $options['cookie'] : '/tmp/cookie';
         $data_array = isset($options['data']) ? $options['data'] : FALSE;
-        $incl_head = isset($options['inc_head']) ? $options['method'] : FALSE;
         $user_agent = isset($options['browser']) ? $this->user_agent('browser') : $this->user_agent();
+        $debug = isset($options['debug']) ? $options['debug'] : FALSE;
 
         $ch = curl_init();
 
@@ -58,7 +58,6 @@ class Bandit_Web
         switch ($method)
         {
             case 'HEAD' :
-                curl_setopt($ch, CURLOPT_HEADER, TRUE);   // No http head
                 curl_setopt($ch, CURLOPT_NOBODY, TRUE);   // No body
                 break;
 
@@ -76,7 +75,6 @@ class Bandit_Web
 
                 curl_setopt($ch, CURLOPT_HTTPGET, TRUE);
                 curl_setopt($ch, CURLOPT_POST, FALSE);
-                curl_setopt($ch, CURLOPT_HEADER, $incl_head);
                 curl_setopt($ch, CURLOPT_NOBODY, FALSE);
         }
 
@@ -92,6 +90,12 @@ class Bandit_Web
         curl_setopt($ch, CURLOPT_MAXREDIRS, 4);             // Limit redirections to four
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);     // Return in string
         curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4 );
+
+        if ( isset($options['debug']) )
+            curl_setopt($ch, CURLINFO_HEADER_OUT, $debug);
+
+        if ( isset($options['headers']) )
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $options['headers']);
 
         // Create return array
         $return_array['result'] = curl_exec($ch);

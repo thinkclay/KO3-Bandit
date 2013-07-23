@@ -21,7 +21,7 @@ class Model_Bandit extends Model
                 echo $message."<br />\r\n";
         }
     }
-    
+
     /**
      * Get rid of this later
      *
@@ -231,28 +231,6 @@ class Model_Bandit extends Model
         return Bandit_Web::factory()->http($options);
     }
 
-    /**
-     * Mscrape Model  - sets up a model for the DB
-     *
-     * @params
-     *  $scrape      Name of the scrape
-     *  $state       What state we are scraping
-     *
-     */
-    public function scrape_model($name, $state, $county = NULL)
-    {
-        $scrape = Brass::factory('Brass_Scrape', ['name' => $name, 'state' => $state])->load();
-
-        if ( ! $scrape->loaded() )
-        {
-            $scrape = Brass::factory('Brass_Scrape', [
-                'name'   => $name,
-                'state'  => $state,
-                'county' => $county
-            ])->create();
-        }
-    }
-
     // attempt to load the offender by booking_id
     public function load_offender($id)
     {
@@ -325,7 +303,7 @@ class Model_Bandit extends Model
     public function parse($pattern, $site)
     {
         preg_match_all($pattern, $site, $matches);
-        
+
         if ( count($matches) )
             return $matches;
         else

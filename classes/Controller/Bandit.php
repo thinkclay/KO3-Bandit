@@ -21,7 +21,7 @@ class Controller_Bandit extends Controller_Public
         $name  = ucwords($this->request->param('name'));
         $sub = ucwords($this->request->param('sub'));
 
-        $class = 'Model_'.$name.'_'.$sub;
+        $class = 'Model_State_'.$name.'_'.$sub;
         $scrape = new $class;
 
         $scrape->scrape();
